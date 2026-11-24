@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bookline: bookings and reminders</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1F5F5;--surface:#fff;--ink:#12232B;--muted:#5B6B73;--line:#D9E2E4;--brand:#0B6E75;--brand-ink:#fff;--accent:#F4B63F;--danger:#B3261E;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1A1F;--surface:#17252B;--ink:#E8F0F2;--muted:#98ABB2;--line:#26373E;--brand:#4FC3CC;--brand-ink:#06242A;--danger:#FF8A80;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1A1F;--surface:#17252B;--ink:#E8F0F2;--muted:#98ABB2;--line:#26373E;--brand:#4FC3CC;--brand-ink:#06242A;--danger:#FF8A80;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:18px 16px 110px}
+h1{font:800 2rem/1.1 "Bricolage Grotesque",system-ui,sans-serif;margin:6px 0 4px}
+h2{font:600 1.05rem "Bricolage Grotesque",system-ui,sans-serif;margin:0 0 10px}
+.sub,.mu{color:var(--muted);font-size:.92rem;margin:0}
+.sub{margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 10px}
+.bk{display:flex;gap:14px}
+.tm{font:800 1.3rem/1.15 "Bricolage Grotesque",system-ui,sans-serif;min-width:4.8rem}
+.bd{flex:1;min-width:0;overflow-wrap:anywhere}
+.next{border-left:6px solid var(--accent)}
+.dn{opacity:.65}
+.big{font:800 1.5rem/1.2 "Bricolage Grotesque",system-ui,sans-serif}.bad{color:var(--danger)}
+.tag{font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid var(--line);vertical-align:middle}.tag.bad{border-color:var(--danger)}.tag.ok{color:var(--brand);border-color:var(--brand)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.cw{text-align:center;font-size:.75rem;color:var(--muted)}.cd{min-height:48px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;padding:2px;display:flex;flex-direction:column;align-items:center;justify-content:center}.cd small{font-size:.7rem;min-height:1em}.cd.has{border-color:var(--brand)}.cd.td{outline:2px solid var(--accent)}.cd.sel{background:var(--brand);color:var(--brand-ink)}
+.row2{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:10px 0}
+.dh{font:600 .95rem "Bricolage Grotesque",system-ui,sans-serif;color:var(--muted);margin:18px 0 8px}
+.ac{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.btn{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 12px;min-height:40px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.btn.p{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.btn.d{color:var(--danger)}
+.btn:focus-visible,nav a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+label{display:block;font-size:.9rem;color:var(--muted);margin:0 0 10px}
+input,select,textarea{font:inherit;color:var(--ink);width:100%;margin-top:4px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.srow{display:grid;grid-template-columns:1fr 96px auto;gap:8px;margin-bottom:8px}
+.srow input{margin-top:0}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav a{flex:1;text-align:center;padding:14px 0;color:var(--muted);text-decoration:none;font-weight:600;border-top:3px solid transparent;margin-top:-1px}
+nav a.on{color:var(--brand);border-top-color:var(--accent)}
+#t{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center;z-index:6}
+#t.on{opacity:1}
+@media (prefers-reduced-motion:reduce){#t{transition:none}}
+</style>
+</head>
+<body>
+<main></main>
+<nav aria-label="Main"><a href="#bookings">Bookings</a><a href="#clients">Customers</a><a href="#grow">Grow</a><a href="#setup">Setup</a></nav>
+<div id="t" role="status"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="bookline:v1";
+const DEF_MSG="Hi {name}, a reminder of your {service} booking with {business} on {date} at {time}. Please reply YES to confirm, or tell me if you need another time.";
+const CUR=["USD","EUR","GBP","NGN","GHS","KES","ZAR","CAD","AUD","INR","BRL","MXN","AED","PHP"];
+let S=(()=>{try{const v=JSON.parse(localStorage.getItem(KEY));if(v&&v.biz&&Array.isArray(v.bookings)&&Array.isArray(v.services))return v}catch(e){}return{biz:{name:"",phone:"",cur:(Intl.DateTimeFormat().resolvedOptions().timeZone==="Africa/Lagos"?"NGN":"USD"),msg:DEF_MSG},services:[],bookings:[]}})();
+let draft=null,showPast=false,q="",CL=[],calOn=false,calM="",calD="",seg="all";
+const toast=m=>{const t=$("#t");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),2600)};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Could not save on this device. Copy a backup in Setup.")}};
+const uid=()=>Math.random().toString(36).slice(2,10);
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const money=n=>{try{const v=+n||0;if(S.biz.cur==="NGN")return "₦"+new Intl.NumberFormat().format(v);return new Intl.NumberFormat(undefined,Object.assign({style:"currency",currency:S.biz.cur},Number.isInteger(v)?{minimumFractionDigits:0,maximumFractionDigits:0}:{})).format(v)}catch(e){return (+n||0)+" "+S.biz.cur}};
+const fd=d=>{try{return new Intl.DateTimeFormat(undefined,{weekday:"short",day:"numeric",month:"short"}).format(new Date(d+"T00:00"))}catch(e){return d}};
+const ft=t=>{try{return new Intl.DateTimeFormat(undefined,{hour:"numeric",minute:"2-digit"}).format(new Date("2000-01-01T"+t))}catch(e){return t}};
+const CCS=[["Nigeria","234"],["Ghana","233"],["Kenya","254"],["South Africa","27"],["Uganda","256"],["Tanzania","255"],["Cameroon","237"],["Senegal","221"],["Ivory Coast","225"],["Rwanda","250"],["Ethiopia","251"],["Egypt","20"],["United States or Canada","1"],["United Kingdom","44"],["Ireland","353"],["India","91"],["Pakistan","92"],["Bangladesh","880"],["UAE","971"],["Saudi Arabia","966"],["Brazil","55"],["Mexico","52"],["Philippines","63"],["Indonesia","62"],["Other (type the full number with +)",""]];
+const RG={NG:"234",GH:"233",KE:"254",ZA:"27",UG:"256",TZ:"255",CM:"237",SN:"221",CI:"225",RW:"250",ET:"251",EG:"20",US:"1",CA:"1",GB:"44",IE:"353",IN:"91",PK:"92",BD:"880",AE:"971",SA:"966",BR:"55",MX:"52",PH:"63",ID:"62"};
+const defCC=()=>{try{if(Intl.DateTimeFormat().resolvedOptions().timeZone==="Africa/Lagos")return"234";return RG[String((navigator.language||"").split("-")[1]||"").toUpperCase()]||""}catch(e){return""}};
+const dg=p=>{const raw=String(p||"").trim(),n=raw.replace(/\D/g,""),cc=S.biz&&S.biz.cc!=null?S.biz.cc:defCC();
+  if(!n)return"";if(raw.startsWith("+"))return n;if(n.startsWith("00"))return n.slice(2);
+  if(n.startsWith("0"))return cc?cc+n.slice(1):"";
+  if(cc&&n.startsWith(cc))return n;
+  return cc&&n.length<=10?cc+n:n};
+const msg=b=>S.biz.msg.replace(/\{name\}/g,b.name).replace(/\{service\}/g,b.service||"booking").replace(/\{business\}/g,S.biz.name||"us").replace(/\{date\}/g,fd(b.date)).replace(/\{time\}/g,ft(b.time));
+const wa=(p,t)=>"https://wa.me/"+dg(p)+(t?"?text="+encodeURIComponent(t):"");
+const sms=(p,t)=>"sms:+"+dg(p)+"?&body="+encodeURIComponent(t);
+const copy=async t=>{try{await navigator.clipboard.writeText(t);toast("Copied")}catch(e){const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand("copy")}catch(x){}a.remove();toast(ok?"Copied":"Copy failed. Select the text and copy it by hand.")}};
+
+// ---- PLAN SETTINGS: change the WhatsApp number, trial length and price text here ----
+const LIC={wa:"2348032534218",lock:true,ask:false,demo:false,trialDays:30,priceNG:"₦2,000",priceUS:"$5",salt:"zrrF85cJNZz1pF"};
+const price=()=>{try{const c=S.biz&&S.biz.cc!=null?S.biz.cc:defCC();return c==="234"?LIC.priceNG:LIC.priceUS}catch(e){return LIC.priceUS}};
+function h53(s,seed=0){let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,c;i<s.length;i++){c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)}
+const bookMsg=()=>{const sv=S.services.map(x=>x.name).filter(Boolean).slice(0,4).join(" / ");return "Hi"+(S.biz.name?" "+S.biz.name:"")+", I would like to make a booking.\nService"+(sv?" ("+sv+")":"")+": \nDay: \nTime: \nMy name: "};
+const sig=(id,e)=>h53(LIC.salt+id+e).toString(36).toUpperCase().slice(0,6);
+const ymd=e=>"20"+e.slice(0,2)+"-"+e.slice(2,4)+"-"+e.slice(4,6);
+let LS={};try{LS=JSON.parse(localStorage.getItem("bookline:lic"))||{}}catch(e){}
+const lsave=()=>{try{localStorage.setItem("bookline:lic",JSON.stringify(LS))}catch(e){}};
+if(!LS.start){LS.start=today();lsave()}
+const dayDiff=(a,b)=>Math.round((new Date(b+"T00:00")-new Date(a+"T00:00"))/864e5);
+function checkCode(c){const p=String(c||"").trim().split("-");if(p.length!==3||!/^\d{6}$/.test(p[1]))return null;const id=p[0].toLowerCase(),e=p[1];if(p[2].toUpperCase()!==sig(id,e))return null;return ymd(e)}
+function access(){const t=today(),ex=LS.code?checkCode(LS.code):null;if(ex&&ex>=t)return{ok:1,paid:1,left:dayDiff(t,ex),until:ex};const ended=ex&&ex<t?ex:null;if(!LIC.lock)return{ok:1,paid:0,left:0,ended};const left=LIC.trialDays-dayDiff(LS.start,t);return left>0?{ok:1,paid:0,left}:{ok:0,paid:0,left:0}}
+const payLink=()=>"https://wa.me/"+LIC.wa+"?text="+encodeURIComponent("Hi, I want to pay for Bookline"+" ("+price()+" per month)"+"."+(S.biz.name?" My business: "+S.biz.name:""));
+const codeBox=t=>`<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;min-height:32px">${t}</summary><label style="margin-top:10px">Access code<input id="ac" autocomplete="off" placeholder="name-261231-AB12CD"></label><div class="ac"><button class="btn p" data-a="code">Unlock</button></div></details>`;
+const growStatus=a=>{
+ if(LIC.demo)return `<div class="card"><h2>Bookline Pro</h2><p class="mu">This is a demo. In your own app this card shows your free trial days, or your Pro plan once you pay.</p></div>`;
+ if(a.paid)return `<div class="card next"><h2>Bookline Pro <span class="tag ok">Active</span></h2><p style="margin:0">Paid until ${esc(fd(a.until))}, ${a.left} day${a.left===1?"":"s"} left.</p>${codeBox("Renew with a new code")}</div>`;
+ return `<div class="card next"><h2>Free trial: ${a.left} day${a.left===1?"":"s"} left</h2>${a.ended?`<p class="mu">Your Pro plan ended on ${esc(fd(a.ended))}.</p>`:""}<p class="mu">Everything in Grow is included in your trial. After it ends, unlock Pro for ${price()} a month to keep it.</p><div class="ac"><a class="btn p" target="_blank" rel="noopener" href="${payLink()}">Pay on WhatsApp</a></div>${codeBox("I have an access code")}</div>`};
+const planCard=()=>growStatus(access());
+function weekly(){const wk=ago(6),bd=S.bookings.filter(b=>b.status==="done"&&b.date>=wk),ns=S.bookings.filter(b=>b.status==="noshow"&&b.date>=wk),lp=lapsed(),up=S.bookings.filter(b=>b.status==="booked"&&!needsAnswer(b));
+ return (S.biz.name||"My business")+": week summary\nCompleted bookings: "+bd.length+" ("+money(sum(bd))+")\nNo-shows: "+ns.length+" ("+money(sum(ns))+" lost)\nUpcoming bookings: "+up.length+"\nCustomers to bring back: "+lp.length+(lp.length?" (about "+money(sum(lp))+" waiting)":"")}
+let GP="";
+const fmtC=(n,c)=>{try{return c==="NGN"?"₦"+new Intl.NumberFormat().format(n):new Intl.NumberFormat(undefined,{style:"currency",currency:c,maximumFractionDigits:0}).format(n)}catch(e){return n+" "+c}};
+const thx=b=>"Hi "+b.name+", thank you for choosing "+(S.biz.name||"us")+"! If you were happy, please tell a friend about us. Message me anytime to book again.";
+function report(){const from=ago(29),dn=S.bookings.filter(b=>b.status==="done"&&b.date>=from),ns=S.bookings.filter(b=>b.status==="noshow"&&b.date>=from);
+ if(!dn.length&&!ns.length)return null;
+ const by={};dn.forEach(b=>{const k=b.service||"Other";by[k]=(by[k]||0)+(+b.price||0)});const svc=Object.entries(by).sort((x,y)=>y[1]-x[1])[0];
+ const D=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],cnt={};dn.forEach(b=>{const d=D[new Date(b.date+"T00:00").getDay()];cnt[d]=(cnt[d]||0)+1});const bd=Object.entries(cnt).sort((x,y)=>y[1]-x[1])[0];
+ const pc={};S.bookings.filter(b=>b.status==="done").forEach(b=>{const k=dg(b.phone)+"|"+b.name.trim().toLowerCase();const c=pc[k]||(pc[k]={name:b.name,n:0,spent:0});c.n++;c.spent+=+b.price||0});
+ const cs=Object.values(pc);
+ return{dep:S.bookings.filter(b=>b.depPaid&&b.date>=from).reduce((x,b)=>x+(+b.dep||0),0),income:sum(dn),done:dn.length,ns:ns.length,rate:Math.round(100*ns.length/(dn.length+ns.length)),svc,bd,reg:cs.filter(c=>c.n>=3).length,avg:cs.length?Math.round(10*cs.reduce((x,c)=>x+c.n,0)/cs.length)/10:0,rep:cs.length?Math.round(100*cs.filter(c=>c.n>=2).length/cs.length):0,top:cs.sort((x,y)=>y.spent-x.spent).slice(0,3)}}
+function vGrow(){
+  const a=access(),tm=ago(-1);
+  let h=`<h1>Grow</h1><p class="sub">Tools that bring in more bookings and cut lost money.</p>${growStatus(a)}`;
+  {let c=null;try{c=JSON.parse(localStorage.getItem("bookline:calc"))}catch(e){}
+   const lost=sum(S.bookings.filter(b=>b.status==="noshow"&&b.date>=ago(29)));
+   h+=`<div class="card"><h2>What are no-shows costing you?</h2><p class="mu">${c&&c.month>0?"Your estimate: about "+esc(fmtC(c.month,c.cur))+" a month.":"Work out your monthly loss in 30 seconds."}${lost?" Recorded in the last 30 days: "+esc(money(lost))+".":""}</p><div class="ac"><a class="btn p" href="calc.html">Open the calculator</a></div></div>`}
+  const tom=S.bookings.filter(b=>b.status==="booked"&&b.date===tm).sort((x,y)=>x.time.localeCompare(y.time)),sent=tom.filter(b=>b.reminded).length;
+  h+=`<div class="card"><h2>Tomorrow’s reminders</h2>${tom.length?`<p class="mu">${sent} of ${tom.length} sent. Tap Send, then press send in WhatsApp.</p>`+tom.map(b=>`<div class="row2"><div><strong>${esc(b.name)}</strong> ${b.reminded?'<span class="tag ok">Sent</span>':""}<div class="mu">${esc(ft(b.time))}${b.service?", "+esc(b.service):""}</div></div>${dg(b.phone)?`<a class="btn p" data-a="rsent" data-id="${b.id}" target="_blank" rel="noopener" href="${wa(b.phone,msg(b))}">${b.reminded?"Send again":"Send"}</a>`:'<span class="mu">No phone</span>'}</div>`).join(""):`<p class="mu">No bookings tomorrow. Bookings made for tomorrow appear here, ready to send.</p>`}</div>`;
+  const nx=[...Array(7)].map((_,i)=>{const d=ago(-(i+1));return{d,n:S.bookings.filter(b=>b.status==="booked"&&b.date===d).length}}),qd=nx.filter(x=>x.n<=1),lnk=dg(S.biz.phone)?wa(S.biz.phone,bookMsg()):"";
+  GP=qd.length?(S.biz.name||"Hello")+": I have openings on "+qd.map(x=>fd(x.d)).join("; ")+"."+(lnk?" Message me to book: "+lnk:""):"";
+  h+=`<div class="card"><h2>Quiet days this week</h2><p class="mu">Days with one booking or none are chances to earn more.</p><div style="display:flex;flex-wrap:wrap;gap:6px;margin:10px 0">${nx.map(x=>`<span class="tag${x.n<=1?" bad":""}">${esc(fd(x.d))}: ${x.n}</span>`).join("")}</div>${qd.length?`<div class="ac"><button class="btn p" data-a="copypost">Copy a post for your status</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(GP)}">Share on WhatsApp</a></div>`:`<p class="mu">Every day next week has 2 or more bookings. Well done.</p>`}</div>`;
+  const r=report(),rows=r?[["Income",money(r.income)],["Completed bookings",r.done],["No-show rate",r.rate+"%"],["Best earning service",r.svc?r.svc[0]+" ("+money(r.svc[1])+")":"None yet"],["Busiest day",r.bd?r.bd[0]+" ("+r.bd[1]+" bookings)":"None yet"],["Repeat customers",r.rep+"%"],["Regulars (3+ visits)",r.reg],["Visits per customer",r.avg],...(r.dep?[["Deposits received",money(r.dep)]]:[]),["Top customers",r.top.map(c=>c.name+" "+money(c.spent)).join(", ")||"None yet"]]:[];
+  h+=`<div class="card"><h2>Your business, last 30 days</h2>${r?rows.map(x=>`<div class="row2" style="margin:6px 0"><span class="mu">${esc(x[0])}</span><strong style="text-align:right">${esc(x[1])}</strong></div>`).join(""):`<p class="mu">Record a few bookings and tap Came or No-show to see your report.</p>`}</div>`;
+  const bl=clients().filter(c=>c.bday&&bdays(c.bday)<=7&&dg(c.phone)).sort((x,y)=>bdays(x.bday)-bdays(y.bday));
+  h+=`<div class="card"><h2>Birthdays this week</h2>${bl.length?bl.map(c=>`<div class="row2"><div><strong>${esc(c.name)}</strong><div class="mu">${bdays(c.bday)===0?"Today":"In "+bdays(c.bday)+" day"+(bdays(c.bday)===1?"":"s")}</div></div><a class="btn p" target="_blank" rel="noopener" href="${wa(c.phone,bMsg(c))}">Send wishes</a></div>`).join(""):`<p class="mu">Add a customer’s birthday when you create a booking. Their wishes appear here the week it is due.</p>`}</div>`;
+  const th=S.bookings.filter(b=>b.status==="done"&&b.date>=ago(3)&&dg(b.phone)).sort((x,y)=>(y.date+y.time).localeCompare(x.date+x.time)).slice(0,6);
+  h+=`<div class="card"><h2>Thank them, win referrals</h2><p class="mu">A thank-you that asks happy customers to tell a friend. It is the cheapest way to get new customers.</p>${th.length?th.map(b=>`<div class="row2"><div><strong>${esc(b.name)}</strong> ${b.thanked?'<span class="tag ok">Thanked</span>':""}<div class="mu">${esc(fd(b.date))}${b.service?", "+esc(b.service):""}</div></div><a class="btn p" data-a="tsent" data-id="${b.id}" target="_blank" rel="noopener" href="${wa(b.phone,thx(b))}">${b.thanked?"Send again":"Thank them"}</a></div>`).join(""):`<p class="mu" style="margin-top:8px">After you tap Came on a booking, that customer appears here.</p>`}</div>`;
+  h+=`<div class="card"><h2>Your records</h2><div class="ac"><button class="btn" data-a="weekly">Copy my weekly summary</button><button class="btn" data-a="custlist">Copy my customer list</button></div></div>`;
+  return h;
+}
+const lockView=()=>`<h1>Your free trial has ended</h1><p class="sub">Unlock Bookline Pro for ${price()} a month. Your bookings and customers are safe on this phone.</p><div class="card next"><h2>What you keep with Pro</h2><ul class="mu" style="margin:0;padding-left:20px"><li>Tomorrow’s reminders in one screen, sent in about a minute</li><li>Quiet-day posts that fill empty days</li><li>A monthly report: income, best service, busiest day, repeat customers</li><li>Thank-you messages that win referrals</li><li>Your money board, bring-them-back list and no-show tracking</li></ul><div class="ac"><a class="btn p" target="_blank" rel="noopener" href="${payLink()}">Pay on WhatsApp</a></div></div><div class="card"><label>Already paid? Enter your access code<input id="ac" autocomplete="off" placeholder="name-261231-AB12CD"></label><div class="ac"><button class="btn p" data-a="code">Unlock</button></div></div><div class="card"><p class="mu">Want a copy of your data first?</p><div class="ac"><button class="btn" data-a="backup">Copy backup</button></div></div>`;
+
+const hm=()=>{const d=new Date();return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")};
+const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const needsAnswer=b=>b.status==="booked"&&(b.date<today()||(b.date===today()&&b.time<=hm()));
+const sum=a=>a.reduce((s,b)=>s+(+b.price||0),0);
+function lapsed(){const cut=ago(21),m={};
+  S.bookings.forEach(b=>{const k=dg(b.phone)+"|"+b.name.trim().toLowerCase();const c=m[k]||(m[k]={name:b.name,phone:b.phone,last:"",price:0,service:"",up:false});
+    if(b.status==="booked"&&!needsAnswer(b))c.up=true;
+    if(b.status==="done"&&b.date>=c.last){c.last=b.date;c.price=+b.price||0;c.service=b.service;c.name=b.name;c.phone=b.phone||c.phone}});
+  return Object.values(m).filter(c=>c.last&&c.last<=cut&&!c.up&&dg(c.phone)).sort((a,b)=>a.last.localeCompare(b.last))}
+const winMsg=c=>"Hi "+c.name+", it has been a while since your last "+(c.service||"visit")+" at "+(S.biz.name||"us")+". Would you like me to book you a time this week?";
+
+const depMsg=b=>"Hi "+b.name+", to confirm your "+(b.service||"booking")+" on "+fd(b.date)+" at "+ft(b.time)+", please pay a deposit of "+money(b.dep)+". "+(S.biz.payinfo?S.biz.payinfo+" ":"Reply and I will send you my payment details. ")+"Please send me the receipt here once it is paid. Thank you!";
+const cMsg=b=>"Hi "+b.name+", your "+(b.service||"booking")+" with "+(S.biz.name||"us")+" is confirmed for "+fd(b.date)+" at "+ft(b.time)+". See you then!";
+const xMsg=b=>"Hi "+b.name+", your "+(b.service||"booking")+" with "+(S.biz.name||"us")+" on "+fd(b.date)+" at "+ft(b.time)+" has been cancelled. Message me anytime to book a new time.";
+const bMsg=c=>"Happy birthday "+c.name+"! Wishing you a wonderful day from everyone at "+(S.biz.name||"us")+". We would love to see you again. Message me anytime to book.";
+const bdays=b=>{if(!b)return 999;const t=new Date(today()+"T00:00"),p=b.split("-");let n=new Date(t.getFullYear(),+p[1]-1,+p[2]);if(n<t)n=new Date(t.getFullYear()+1,+p[1]-1,+p[2]);return Math.round((n-t)/864e5)};
+const SEG={all:["All",()=>true],reg:["Regulars",c=>c.d>=3],due:["Due back",c=>c.d>=1&&c.lastDone<=ago(30)&&!c.up],never:["Never came",c=>c.d===0&&c.ns>=1&&!c.up],bday:["Birthdays soon",c=>bdays(c.bday)<=7]};
+const bk=(b,n)=>{const bd=b.status==="booked";return `<div class="card bk${n?" next":""}${bd?"":" dn"}"><div class="tm">${esc(ft(b.time))}</div><div class="bd"><strong>${esc(b.name)}</strong> ${b.status==="cancelled"?'<span class="tag bad">Cancelled</span>':b.status==="noshow"?'<span class="tag bad">No-show</span>':b.status==="done"?'<span class="tag">Came</span>':b.confirmed?'<span class="tag ok">Confirmed</span>':""}${+b.dep?(b.depPaid?' <span class="tag ok">Deposit paid '+esc(money(b.dep))+'</span>':' <span class="tag bad">Deposit due '+esc(money(b.dep))+'</span>'):""}<div class="mu">${esc(b.service||"Booking")}${+b.price?", "+esc(money(b.price)):""}</div>${b.notes?`<div class="mu">${esc(b.notes)}</div>`:""}<div class="ac">${bd&&dg(b.phone)?`<a class="btn p" target="_blank" rel="noopener" href="${wa(b.phone,msg(b))}">WhatsApp reminder</a><a class="btn" href="${sms(b.phone,msg(b))}">Text</a>`:""}${bd&&+b.dep&&!b.depPaid&&dg(b.phone)?`<a class="btn" data-a="depreq" data-id="${b.id}" target="_blank" rel="noopener" href="${wa(b.phone,depMsg(b))}">Request deposit</a>`:""}${bd&&+b.dep&&!b.depPaid?`<button class="btn" data-a="deppaid" data-id="${b.id}">Deposit received</button>`:""}${bd&&dg(b.phone)?`<a class="btn" data-a="confsent" data-id="${b.id}" target="_blank" rel="noopener" href="${wa(b.phone,cMsg(b))}">${b.confSent?"Resend confirmation":"Send confirmation"}</a>`:""}${b.status==="cancelled"&&dg(b.phone)?`<a class="btn p" data-a="xtold" data-id="${b.id}" target="_blank" rel="noopener" href="${wa(b.phone,xMsg(b))}">Tell customer</a>`:""}${bd&&!b.confirmed?`<button class="btn" data-a="conf" data-id="${b.id}">Customer confirmed</button>`:""}${bd?`<button class="btn" data-a="done" data-id="${b.id}">Mark done</button>`:""}${bd?`<button class="btn d" data-a="cancelbk" data-id="${b.id}">Cancel booking</button>`:""}<button class="btn d" data-a="del" data-id="${b.id}">Delete</button></div></div></div>`};
+
+const SUG={
+"Barber or salon":["Haircut","Beard trim","Braiding","Hair colouring","Wash and style","Kids cut"],
+"Cleaning":["Home cleaning","Office cleaning","Deep clean","Laundry"],
+"Photography and video":["Portrait session","Event coverage","Passport photos","Video shoot"],
+"Repairs":["Phone screen repair","Battery change","Laptop repair","Diagnosis","Generator service"],
+"Tutoring and lessons":["Maths lesson","English lesson","Exam preparation","Music lesson","Coding class"],
+"Mechanic and auto":["Oil change","Brake check","Car diagnosis","Tyre change","Car wash"],
+"Tailor and fashion":["Custom outfit","Alterations","Fitting","Fabric consultation"],
+"Fitness and coaching":["Personal session","Group class","Plan review","Online coaching"],
+"Beauty and makeup":["Makeup session","Nails","Lashes","Facial","Massage"],
+"Events and catering":["Event planning","Catering order","Decoration","DJ and MC"],
+"Home and trades":["Plumbing visit","Electrical repair","Painting","AC servicing","Carpentry"],
+"Consulting":["Consultation","Business coaching","Document review","Follow-up session"]};
+function fillSg(v){const g=$("#sg");if(!g)return;const have=S.services.map(x=>x.name.toLowerCase());const o=(SUG[v]||[]).filter(n=>!have.includes(n.toLowerCase()));g.innerHTML=o.length?o.map(n=>`<option>${esc(n)}</option>`).join(""):`<option value="">Choose a type first</option>`;g.disabled=!o.length}
+function svSel(t){const v=t.value,n=$("#nsv");if(n)n.style.display=v==="__new__"?"block":"none";const p=$("#bf [name=price]");if(p&&v!=="__new__"){const x=S.services.find(y=>y.name===v);p.value=x&&x.price?x.price:""}}
+const form=()=>{const dn=draft.service||"";const isNew=!S.services.length||dn==="__new__";const sel=isNew?null:(S.services.find(x=>x.name===dn)||S.services[0]);const pInit=draft.price||(sel&&sel.price?sel.price:"");return `<div class="card" id="bf"><h2>New booking</h2><label>Customer name<input name="name" autocomplete="off" value="${esc(draft.name)}"></label><label>Customer WhatsApp number<input name="phone" inputmode="tel" placeholder="0803 000 0000" value="${esc(draft.phone)}"></label><label>Service<select name="service" id="svsel">${S.services.map(x=>`<option value="${esc(x.name)}"${x===sel?" selected":""}>${esc(x.name)}${+x.price?" ("+esc(money(x.price))+")":""}</option>`).join("")}<option value="__new__"${isNew?" selected":""}>Not listed? Add a new service</option></select></label><div id="nsv" style="display:${isNew?"block":"none"}"><div class="two"><label>New service name<input name="nsname" autocomplete="off"></label><label>Its price (optional)<input name="nsprice" type="number" min="0" step="any" inputmode="decimal"></label></div></div><div class="two"><label>Date<input type="date" name="date" value="${esc(draft.date)}"></label><label>Time<input type="time" name="time" value="${esc(draft.time)}"></label></div><label>Price (${esc(S.biz.cur)}, optional)<input name="price" type="number" min="0" step="any" inputmode="decimal" value="${esc(pInit)}"></label><label>Deposit to confirm this booking (optional)<input name="dep" type="number" min="0" step="any" inputmode="decimal" placeholder="Your amount"></label><label>Customer birthday (optional)<input name="bday" type="date"></label><label>Notes<input name="notes" value="${esc(draft.notes)}"></label><div class="ac"><button class="btn p" data-a="save">Save booking</button><button class="btn" data-a="cancel">Cancel</button></div></div>`};
+
+function calView(){
+  if(!calM)calM=today().slice(0,7);if(!calD)calD=today();
+  const [y,m]=calM.split("-").map(Number),first=new Date(y,m-1,1),off=(first.getDay()+6)%7,dim=new Date(y,m,0).getDate(),cnt={};
+  S.bookings.filter(b=>b.status==="booked").forEach(b=>{cnt[b.date]=(cnt[b.date]||0)+1});
+  let cells="";for(let i=0;i<off;i++)cells+="<span></span>";
+  for(let d=1;d<=dim;d++){const k=calM+"-"+String(d).padStart(2,"0"),n=cnt[k]||0;cells+=`<button class="cd${n?" has":""}${k===today()?" td":""}${k===calD?" sel":""}" data-a="calday" data-d="${k}" aria-label="${esc(fd(k))}, ${n} booking${n===1?"":"s"}">${d}<small>${n||""}</small></button>`}
+  const wd=[1,2,3,4,5,6,0].map(i=>new Intl.DateTimeFormat(undefined,{weekday:"narrow"}).format(new Date(2024,0,7+i))),title=new Intl.DateTimeFormat(undefined,{month:"long",year:"numeric"}).format(first);
+  const day=S.bookings.filter(b=>b.date===calD).sort((a,b)=>a.time.localeCompare(b.time));
+  return `<div class="card"><div class="row2" style="margin:0 0 10px"><button class="btn" data-a="calprev" aria-label="Previous month">‹</button><strong>${esc(title)}</strong><button class="btn" data-a="calnext" aria-label="Next month">›</button></div><div class="cal">${wd.map(w=>`<span class="cw">${esc(w)}</span>`).join("")}${cells}</div></div><div class="dh">${esc(fd(calD))}</div>${day.length?day.map(b=>bk(b,false)).join(""):`<p class="mu">Nothing booked this day.</p>`}<button class="btn p" data-a="calnew">Add a booking on this day</button>`;
+}
+function vBookings(){
+  const t=today(),all=S.bookings.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time));
+  const na=all.filter(needsAnswer),up=all.filter(b=>b.status==="booked"&&!needsAnswer(b)),past=all.filter(b=>b.status!=="booked").reverse();
+  const td=up.filter(b=>b.date===t);
+  const earned=sum(S.bookings.filter(b=>b.status==="done"&&b.date>=ago(6))),ns=S.bookings.filter(b=>b.status==="noshow"&&b.date>=ago(29)),kept=ns.reduce((x,b)=>x+(b.depPaid?+b.dep||0:0),0),lost=Math.max(0,sum(ns)-kept),lp=lapsed();
+  let h=`<h1>${esc(S.biz.name||"Bookline")}</h1><p class="sub">${td.length?td.length+" more booked today":"Nothing else booked today"}</p>`;
+  {const x=access();
+   if(x.paid)h+=`<p style="margin:-6px 0 12px"><span class="tag ok">Pro until ${esc(fd(x.until))}</span></p>`;
+   else if(x.left<=5)h+=`<div class="card next"><strong>Your free trial ends in ${x.left} day${x.left===1?"":"s"}</strong><div class="mu">Unlock Bookline Pro to keep your reminders, reports and growth tools.</div><div class="ac"><a class="btn p" target="_blank" rel="noopener" href="${payLink()}">Pay on WhatsApp</a></div></div>`}
+  if(!S.biz.name)h+=`<div class="card"><strong>Welcome. Get started in 3 steps</strong><ol class="mu" style="padding-left:20px;margin:8px 0 0"><li>Open Setup, choose your country, then add your business name, WhatsApp number and services.</li><li>Tap New booking each time a customer books with you.</li><li>Tap WhatsApp reminder before the booking so they show up.</li></ol><p class="mu" style="margin-top:10px">Your data stays on this phone. Use Copy backup in Setup now and then, and add this page to your home screen to open it like an app.</p><div class="ac"><a class="btn p" href="#setup">Open Setup</a><a class="btn" href="calc.html">What do no-shows cost me?</a></div></div>`;
+  {let c=null;try{c=JSON.parse(localStorage.getItem("bookline:calc"))}catch(e){}
+   if(c&&c.month>0&&!S.bookings.some(b=>b.status==="done"||b.status==="noshow")){let f;try{f=c.cur==="NGN"?"₦"+new Intl.NumberFormat().format(c.month):new Intl.NumberFormat(undefined,{style:"currency",currency:c.cur,maximumFractionDigits:0}).format(c.month)}catch(e){f=c.month+" "+c.cur}
+   h+=`<div class="card next"><strong>Your estimate: about ${esc(f)} a month goes to no-shows</strong><div class="mu">Add your bookings and tap Came or No-show. This screen will then show your real number.</div></div>`}}
+  if(S.bookings.length)h+=`<div class="card"><div class="two"><div><div class="mu">Earned, last 7 days</div><div class="big">${esc(money(earned))}</div></div><div><div class="mu">Lost to no-shows, 30 days</div><div class="big${lost?" bad":""}">${esc(money(lost))}</div><div class="mu">${ns.length} no-show${ns.length===1?"":"s"}</div>${kept?`<div class="mu">Deposits kept: ${esc(money(kept))}</div>`:""}</div></div></div>`;
+  const cx=all.filter(b=>b.status==="cancelled"&&!b.xTold&&b.date>=t);
+  if(cx.length)h+=`<div class="card next"><h2>Cancelled: let the customer know</h2>${cx.slice(0,6).map(b=>`<div class="row2"><div><strong>${esc(b.name)}</strong><div class="mu">${esc(fd(b.date))}, ${esc(ft(b.time))}${b.service?", "+esc(b.service):""}</div></div><div class="ac" style="margin:0">${dg(b.phone)?`<a class="btn p" data-a="xtold" data-id="${b.id}" target="_blank" rel="noopener" href="${wa(b.phone,xMsg(b))}">Tell customer</a>`:""}<button class="btn" data-a="xtold" data-id="${b.id}">Skip</button></div></div>`).join("")}</div>`;
+  if(na.length)h+=`<div class="card next"><h2>Did they come?</h2>${na.slice(0,10).map(b=>`<div class="row2"><div><strong>${esc(b.name)}</strong><div class="mu">${esc(fd(b.date))}, ${esc(ft(b.time))}${b.service?", "+esc(b.service):""}${+b.price?", "+esc(money(b.price)):""}</div></div><div class="ac" style="margin:0"><button class="btn p" data-a="done" data-id="${b.id}">Came</button><button class="btn d" data-a="ns" data-id="${b.id}">No-show</button></div></div>`).join("")}</div>`;
+  if(lp.length)h+=`<div class="card"><strong>${lp.length} customer${lp.length===1?"":"s"} not seen in 3 weeks</strong><div class="mu">About ${esc(money(sum(lp)))} is waiting for one message each.</div><div class="ac"><a class="btn p" href="#clients">Bring them back</a></div></div>`;
+  h+=draft?form():`<button class="btn p" data-a="new">New booking</button>`;
+  h+=`<div class="ac" style="margin:12px 0 4px"><button class="btn${calOn?"":" p"}" data-a="vmode" data-m="list">List</button><button class="btn${calOn?" p":""}" data-a="vmode" data-m="cal">Calendar</button></div>`;
+  if(calOn)h+=calView();else{
+  if(!up.length&&!na.length)h+=`<p class="mu" style="margin-top:16px">No upcoming bookings. Tap New booking when a customer messages you.</p>`;
+  let last="";
+  up.forEach((b,i)=>{if(b.date!==last){last=b.date;h+=`<div class="dh">${b.date===t?"Today":esc(fd(b.date))}</div>`}h+=bk(b,i===0)});
+  if(past.length)h+=`<div class="ac" style="margin-top:18px"><button class="btn" data-a="past">${showPast?"Hide":"Show"} past bookings (${past.length})</button></div>`+(showPast?past.slice(0,30).map(b=>`<div class="dh">${esc(fd(b.date))}</div>`+bk(b,false)).join(""):"");
+  }
+  return h;
+}
+
+function clients(){const m={};S.bookings.forEach(b=>{const k=dg(b.phone)+"|"+b.name.trim().toLowerCase();const c=m[k]||(m[k]={name:b.name,phone:b.phone,n:0,d:0,ns:0,up:false,lastDone:"",bday:"",spent:0,last:""});c.n++;if(b.status==="done"){c.spent+=+b.price||0;c.d++;if(b.date>=c.lastDone)c.lastDone=b.date}if(b.status==="noshow")c.ns++;if(b.status==="booked"&&!needsAnswer(b))c.up=true;if(b.bday)c.bday=b.bday;if(b.date>=c.last){c.last=b.date;c.name=b.name;c.phone=b.phone||c.phone}});return Object.values(m).sort((a,b)=>b.last.localeCompare(a.last))}
+function clist(){
+  CL=clients().filter(c=>SEG[seg][1](c)&&(c.name+c.phone).toLowerCase().includes(q.toLowerCase()));
+  if(!CL.length)return `<p class="mu">${!S.bookings.length?"Customers appear here after your first booking.":seg==="all"?"No customer matches your search.":"No customers in this group yet."}</p>`;
+  return CL.map((c,i)=>{const bd=bdays(c.bday),msgt=seg==="due"?winMsg({name:c.name,service:"",price:0}):bd<=7?bMsg(c):"";return `<div class="card"><strong>${esc(c.name)}</strong> ${c.d>=3?'<span class="tag ok">Regular</span>':""} ${c.d>=1&&c.lastDone<=ago(30)&&!c.up?'<span class="tag bad">Due back</span>':""} ${bd<=7?'<span class="tag ok">Birthday '+(bd===0?"today":"in "+bd+" day"+(bd===1?"":"s"))+'</span>':""}<div class="mu">${c.n} booking${c.n===1?"":"s"}, ${c.d} visit${c.d===1?"":"s"}, ${esc(money(c.spent))} paid, last ${esc(fd(c.last))}</div>${c.phone?`<div class="mu">${esc(c.phone)}</div>`:""}<div class="ac">${dg(c.phone)?`<a class="btn" target="_blank" rel="noopener" href="${wa(c.phone,msgt)}">Message on WhatsApp</a>`:""}<button class="btn p" data-a="again" data-k="${i}">Book again</button></div></div>`}).join("");
+}
+function vClients(){const lp=lapsed();return `<h1>Customers</h1><p class="sub">Everyone you have booked, newest first.</p>${lp.length?`<div class="card next"><h2>Bring them back</h2><p class="mu">${lp.length} customer${lp.length===1?"":"s"} not seen in 3 weeks. One message each, about ${esc(money(sum(lp)))} waiting.</p>${lp.slice(0,8).map(c=>`<div class="row2"><div><strong>${esc(c.name)}</strong><div class="mu">Last visit ${esc(fd(c.last))}</div></div><a class="btn p" target="_blank" rel="noopener" href="${wa(c.phone,winMsg(c))}">Message</a></div>`).join("")}</div>`:""}<div class="ac" style="margin:0 0 12px">${Object.entries(SEG).map(([k,v])=>`<button class="btn${seg===k?" p":""}" data-a="seg" data-k="${k}">${esc(v[0])} (${clients().filter(v[1]).length})</button>`).join("")}</div><label>Search<input id="q" type="search" placeholder="Name or phone" value="${esc(q)}"></label><div id="cl">${clist()}</div>`}
+
+function vSetup(){
+  const b=S.biz,cc=b.cc!=null?b.cc:defCC(),link=dg(b.phone)?wa(b.phone,bookMsg()):"";
+  return `<h1>Setup</h1><p class="sub">Everything saves on this device as you type.</p>${planCard()}
+<div class="card"><h2>Your business</h2><label>Business name<input data-s="biz.name" value="${esc(b.name)}"></label><label>Country of your phone number<select data-s="biz.cc">${CCS.map(x=>`<option value="${x[1]}"${x[1]===cc?" selected":""}>${esc(x[0])}${x[1]?" (+"+x[1]+")":""}</option>`).join("")}</select></label><label>Your WhatsApp number<input data-s="biz.phone" inputmode="tel" placeholder="0803 000 0000" value="${esc(b.phone)}"></label><label>How customers pay deposits (optional)<textarea data-s="biz.payinfo" rows="3" placeholder="For example: your bank name and account number, or a payment link">${esc(b.payinfo||"")}</textarea></label><p class="mu" style="margin:-4px 0 0">Bookline never handles the money. Customers pay you directly, and you tap Deposit received.</p><label>Currency<select data-s="biz.cur">${CUR.map(c=>`<option${c===b.cur?" selected":""}>${c}</option>`).join("")}</select></label></div>
+<div class="card"><h2>Services or products</h2><p class="mu" style="margin-bottom:10px">You decide your own prices. Leave the price empty if it depends on the job.</p>${S.services.map((s,i)=>`<div class="srow"><input data-sv="${i}" data-f="name" placeholder="Service or product" aria-label="Service name" value="${esc(s.name)}"><input data-sv="${i}" data-f="price" type="number" min="0" step="any" inputmode="decimal" placeholder="Your price" aria-label="Price" value="${esc(s.price)}"><button class="btn d" data-a="rs" data-i="${i}">Remove</button></div>`).join("")}<div class="card" style="background:var(--bg)"><label>Quick add: type of business<select id="bt"><option value="">Choose a type</option>${Object.keys(SUG).map(k=>`<option>${esc(k)}</option>`).join("")}</select></label><label>Service<select id="sg" disabled><option value="">Choose a type first</option></select></label><div class="ac" style="margin-top:0"><button class="btn" data-a="sug">Add this service</button></div></div><button class="btn" data-a="as">Add my own service</button></div>
+<div class="card"><h2>Reminder message</h2><textarea data-s="biz.msg" rows="4">${esc(b.msg)}</textarea><p class="mu">Use {name} {service} {business} {date} {time}. Each reminder opens in WhatsApp or your texting app so you can send it yourself.</p></div>
+<div class="card"><h2>Booking link for customers</h2><p class="mu" style="margin-bottom:10px">Put this link in your Instagram, TikTok or WhatsApp bio. Customers tap it and message you to book.</p>${link?`<input readonly value="${esc(link)}" aria-label="Booking link"><p class="mu" style="margin-top:8px">This link opens a WhatsApp chat with +${esc(dg(b.phone))}</p><div class="ac"><a class="btn p" id="tl" target="_blank" rel="noopener" href="${esc(link)}">Test my link</a><button class="btn" data-a="copylink">Copy link</button></div>`:`<p class="mu">Add your country and WhatsApp number above to get your link.</p>`}</div>
+<div class="card"><h2>Backup</h2><p class="mu">Your data lives in this browser only. Copy a backup now and then, and paste it here to restore on another device.</p><div class="ac"><button class="btn" data-a="backup">Copy backup</button></div><textarea id="rs" rows="3" placeholder="Paste a backup here"></textarea><div class="ac"><button class="btn" data-a="restore">Restore backup</button></div></div><p class="mu" style="text-align:center;margin-top:16px">Bookline version 2026-11-22h</p>`;
+}
+
+function render(){
+  const ac=access();document.querySelector("nav").style.display=ac.ok?"":"none";if(!ac.ok){$("main").innerHTML=lockView();return}
+  const h=location.hash.slice(1),v=["bookings","clients","grow","setup"].includes(h)?h:"bookings";
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on",a.hash==="#"+v));
+  $("main").innerHTML={bookings:vBookings,clients:vClients,grow:vGrow,setup:vSetup}[v]();
+}
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-a]");if(!el)return;
+  const a=el.dataset.a,id=el.dataset.id;
+  if(a==="new"){draft={name:"",phone:"",service:"",date:today(),time:"10:00",price:"",notes:""};render()}
+  else if(a==="cancel"){draft=null;render()}
+  else if(a==="save"){
+    const g=n=>$("#bf [name="+n+"]").value.trim();
+    let sv=g("service"),pr=g("price"),ns=null;if(sv==="__new__"){const nn=g("nsname");if(!nn){toast("Type the name of the new service");return}ns={name:nn,price:g("nsprice")};sv=nn;pr=pr||ns.price}
+    const b={id:uid(),name:g("name"),phone:g("phone"),service:sv,date:g("date"),time:g("time"),price:pr,notes:g("notes"),dep:g("dep"),bday:g("bday"),depPaid:false,status:"booked"};
+    if(!b.name||!b.date||!b.time){toast("Add a name, date and time");return}
+    if(ns){const ex=S.services.find(x=>x.name.toLowerCase()===ns.name.toLowerCase());if(ex)b.service=ex.name;else S.services.push({name:ns.name,price:ns.price||pr||""})}
+    const clash=S.bookings.some(x=>x.date===b.date&&x.time===b.time&&x.status==="booked");
+    S.bookings.push(b);save();draft=null;render();toast(clash?"Saved. You have another booking at this time.":"Booking saved");
+  }
+  else if(a==="code"){const v=$("#ac").value,x=checkCode(v);if(!x||x<today()){toast("That code is not valid or has expired");return}LS.code=v.trim();lsave();if(location.hash!=="#grow")location.hash="#grow";render();toast("Bookline Pro unlocked until "+fd(x))}
+  else if(a==="vmode"){calOn=el.dataset.m==="cal";render()}
+  else if(a==="calprev"||a==="calnext"){const p=(calM||today().slice(0,7)).split("-").map(Number),d=new Date(p[0],p[1]-1+(a==="calnext"?1:-1),1);calM=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");render()}
+  else if(a==="calday"){calD=el.dataset.d;render()}
+  else if(a==="calnew"){draft={name:"",phone:"",service:"",date:calD||today(),time:"10:00",price:"",notes:""};render();try{window.scrollTo(0,0)}catch(e){}}
+  else if(a==="seg"){seg=el.dataset.k;render()}
+  else if(a==="deppaid"){const b=S.bookings.find(x=>x.id===id);if(b){b.depPaid=true;save();render()}}
+  else if(a==="rsent"||a==="tsent"){const b=S.bookings.find(x=>x.id===id);if(b){if(a==="rsent")b.reminded=true;else b.thanked=true;save();setTimeout(render,400)}}
+  else if(a==="copypost"){copy(GP)}
+  else if(a==="weekly"){copy(weekly())}
+  else if(a==="custlist"){copy(clients().map(c=>c.name+", "+(c.phone||"no phone")+", "+c.n+" booking"+(c.n===1?"":"s")+", "+money(c.spent)+" paid").join("\n")||"No customers yet")}
+  else if(a==="later"){LS.later=today();lsave();render()}
+  else if(a==="confsent"){const b=S.bookings.find(x=>x.id===id);if(b){b.confSent=true;save();setTimeout(render,400)}}
+  else if(a==="xtold"){const b=S.bookings.find(x=>x.id===id);if(b){b.xTold=true;save();if(el.tagName==="A")setTimeout(render,400);else render()}}
+  else if(a==="cancelbk"){
+    if(!el.dataset.armed){el.dataset.armed="1";el.textContent="Tap again to cancel";setTimeout(()=>{if(el.isConnected){delete el.dataset.armed;el.textContent="Cancel booking"}},3000);return}
+    const b=S.bookings.find(x=>x.id===id);if(b){b.status="cancelled";save();render();toast("Booking cancelled. Tap Tell customer on the home screen.")}
+  }
+  else if(a==="done"){const b=S.bookings.find(x=>x.id===id);if(b){b.status="done";save();render()}}
+  else if(a==="del"){
+    if(!el.dataset.armed){el.dataset.armed="1";el.textContent="Tap again to delete";setTimeout(()=>{if(el.isConnected){delete el.dataset.armed;el.textContent="Delete"}},3000);return}
+    S.bookings=S.bookings.filter(x=>x.id!==id);save();render();
+  }
+  else if(a==="ns"){const b=S.bookings.find(x=>x.id===id);if(b){b.status="noshow";save();render()}}
+  else if(a==="conf"){const b=S.bookings.find(x=>x.id===id);if(b){b.confirmed=true;save();render()}}
+  else if(a==="past"){showPast=!showPast;render()}
+  else if(a==="again"){const c=CL[+el.dataset.k];draft={name:c.name,phone:c.phone||"",service:"",date:today(),time:"10:00",price:"",notes:""};if(location.hash!=="#bookings")location.hash="#bookings";else render()}
+  else if(a==="sug"){const g=$("#sg");if(!g||!g.value){toast("Choose a business type and a service first");return}S.services.push({name:g.value,price:""});save();render();toast("Added. Now type your price.")}
+  else if(a==="as"){S.services.push({name:"",price:""});save();render()}
+  else if(a==="rs"){S.services.splice(+el.dataset.i,1);save();render()}
+  else if(a==="copylink"){copy(wa(S.biz.phone,bookMsg()))}
+  else if(a==="backup"){copy(JSON.stringify(S))}
+  else if(a==="restore"){
+    try{const v=JSON.parse($("#rs").value);if(!(v&&v.biz&&Array.isArray(v.bookings)&&Array.isArray(v.services)))throw 0;S=v;save();render();toast("Backup restored")}catch(x){toast("That backup could not be read. Paste the full text you copied.")}
+  }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="svsel")svSel(t);if(t.id==="bt")fillSg(t.value);
+  if(t.dataset.s){const k=t.dataset.s.split(".");S[k[0]][k[1]]=t.value;save();if(k[1]==="phone"||k[1]==="cc")render()}
+  else if(t.dataset.sv!==undefined){S.services[+t.dataset.sv][t.dataset.f]=t.value;save();{const u=wa(S.biz.phone,bookMsg()),l=document.querySelector('input[aria-label="Booking link"]'),tl=$("#tl");if(l)l.value=u;if(tl)tl.href=u}}
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.id==="svsel")svSel(t);
+  if(t.id==="bt")fillSg(t.value);
+  if(t.id==="q"){q=t.value;$("#cl").innerHTML=clist()}
+});
+window.addEventListener("hashchange",render);
+render();
+</script>
+</body>
+</html>
